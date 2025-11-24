@@ -1,6 +1,7 @@
 import sqlite3
 import matplotlib.pyplot as plt
 from datetime import datetime
+import csv
 
 DB_NAME = "study_tracker.db"
 
@@ -23,6 +24,10 @@ def log_session(subject, duration_minutes):
     """Logs a new study session."""
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
+    
+    # Normalize subject: remove extra spaces and title case
+    subject = subject.strip().title()
+    
     date_str = datetime.now().strftime("%Y-%m-%d")
     cursor.execute('''
         INSERT INTO study_sessions (subject, date, duration_minutes)
@@ -45,6 +50,22 @@ def get_study_data():
     conn.close()
     return data
 
+def export_to_csv():
+    """Exports all study sessions to a CSV file."""
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute('SELECT subject, date, duration_minutes FROM study_sessions')
+    data = cursor.fetchall()
+    conn.close()
+
+    filename = "study_data.csv"
+    with open(filename, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(["Subject", "Date", "Duration (Minutes)"])
+        writer.writerows(data)
+    
+    print(f"Data exported successfully to {filename}")
+
 def plot_study_stats():
     """Plots a bar chart of study time per subject."""
     data = get_study_data()
@@ -63,13 +84,31 @@ def plot_study_stats():
     plt.title('Study Time Tracker')
     plt.show()
 
+def clean_database():
+    """Normalizes existing subject names in the database."""
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT id, subject FROM study_sessions")
+    rows = cursor.fetchall()
+    
+    for row_id, subject in rows:
+        normalized_subject = subject.strip().title()
+        if subject != normalized_subject:
+            cursor.execute("UPDATE study_sessions SET subject = ? WHERE id = ?", (normalized_subject, row_id))
+    
+    conn.commit()
+    conn.close()
+
 def main():
     initialize_db()
+    clean_database() # Ensure data is clean on startup
     while True:
         print("\n--- Study Time Tracker ---")
         print("1. Log Study Session")
         print("2. View Progress Chart")
-        print("3. Exit")
+        print("3. Export to CSV")
+        print("4. Exit")
         
         choice = input("Enter your choice: ")
         
@@ -83,6 +122,8 @@ def main():
         elif choice == '2':
             plot_study_stats()
         elif choice == '3':
+            export_to_csv()
+        elif choice == '4':
             print("Keep up the good work! Goodbye!")
             break
         else:
