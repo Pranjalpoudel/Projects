@@ -1,0 +1,30 @@
+* {
+  box-sizing: border-box;
+}
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: "Quicksand", sans-serif;
+  margin: unset;
+}
+
+a {
+  /* link lai underline hatako */
+  text-decoration: none;
+}
+
+h1,
+h2,
+h3,
+p {
+  all: unset;
+  display: block;
+}
+
+ul,
+li {
+  /* no bullet and numbering arises */
+  all: unset;
+}
